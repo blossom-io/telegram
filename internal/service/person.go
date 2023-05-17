@@ -10,6 +10,9 @@ import (
 )
 
 type Personer interface {
+	GetTelegramByTwitchID(ctx context.Context, twitchID int64) (telegramID int64, telegramUsername string, err error)
+	GetTelegramByTelegramUsernameOrID(ctx context.Context, telegramID int64, telegramUsername string) (int64, string, error)
+	GetTwitchByTelegramUsernameOrID(ctx context.Context, telegramID int64, telegramUsername string) (int64, string, error)
 	GetSubchatIDByInviteKey(ctx context.Context, inviteKey string) (int64, error)
 	LinkTelegramToTwitchID(ctx context.Context, twitchID int64, telegramID int64, telergamUsername string) error
 }
@@ -39,4 +42,16 @@ func (svc *service) GetSubchatIDByInviteKey(ctx context.Context, inviteKey strin
 
 func (svc *service) LinkTelegramToTwitchID(ctx context.Context, twitchID int64, telegramID int64, telergamUsername string) error {
 	return svc.repo.LinkTelegramToTwitchID(ctx, twitchID, telegramID, telergamUsername)
+}
+
+func (svc *service) GetTelegramByTwitchID(ctx context.Context, twitchID int64) (telegramID int64, telegramUsername string, err error) {
+	return svc.repo.GetTelegramByTwitchID(ctx, twitchID)
+}
+
+func (svc *service) GetTelegramByTelegramUsernameOrID(ctx context.Context, telegramID int64, telegramUsername string) (int64, string, error) {
+	return svc.repo.GetTelegramByTelegramUsernameOrID(ctx, telegramID, telegramUsername)
+}
+
+func (svc *service) GetTwitchByTelegramUsernameOrID(ctx context.Context, telegramID int64, telegramUsername string) (int64, string, error) {
+	return svc.repo.GetTwitchByTelegramUsernameOrID(ctx, telegramID, telegramUsername)
 }

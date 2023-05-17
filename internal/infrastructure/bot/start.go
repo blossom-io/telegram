@@ -2,7 +2,9 @@ package bot
 
 import (
 	"context"
+	"database/sql"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"time"
 
@@ -10,12 +12,14 @@ import (
 )
 
 const (
-	inviteLinkExpiresIn  = 5 * time.Minute
-	MsgAlreadyMember     = "🗿 Ты уже участник этого чата"
-	MsgInviteKeyNotFound = "🗿 Вас нет в списке приглашенных 📋, попробуйте ещё раз авторизоваться через Twitch"
-	MsgInviteLink        = "🤩 Добро пожаловать!\n\n🦦Мы тебя уже заждались!\n\n🔗Ссылка для входа в чат:\n%s"
-	MsgInviteIsNotYours  = "🤷‍♂️ Это не ваш ключ приглашения"
-	chatStatusMember     = "member"
+	inviteLinkExpiresIn      = 5 * time.Minute
+	MsgAlreadyMember         = "🗿 Ты уже участник этого чата"
+	MsgTwitchAlreadyLinked   = "Ваш Twitch аккаунт уже привязан к @%s"
+	MsgTelegramAlreadyLinked = "Ваш Telegram аккаунт уже привязан к twitch.tv/%s"
+	MsgInviteKeyNotFound     = "🗿 Вас нет в списке приглашенных 📋, попробуйте ещё раз авторизоваться через Twitch"
+	MsgInviteLink            = "🤩 Добро пожаловать!\n\n🦦Мы тебя уже заждались!\n\n🔗Ссылка для входа в чат:\n%s"
+	MsgInviteIsNotYours      = "🤷‍♂️ Это не ваш ключ приглашения"
+	chatStatusMember         = "member"
 )
 
 func (b *Bot) CmdStart(ctx context.Context, u tg.Update) error {
@@ -30,6 +34,11 @@ func (b *Bot) CmdStart(ctx context.Context, u tg.Update) error {
 	}
 
 	subchatTelegramID, err := b.svc.GetSubchatIDByInviteKey(ctx, inviteKey)
+	if err != nil {
+		return err
+	}
+
+	err = b.checkLinkedAccounts(ctx, u, ownerTwitchID)
 	if err != nil {
 		return err
 	}
@@ -124,6 +133,10 @@ func (b *Bot) RevokeChatInviteLink(subchatTelegramID int64, inviteLink string) e
 func (b *Bot) getOwnerIDsByInviteKey(ctx context.Context, u tg.Update, inviteKey string) (ownerTwitchID int64, ownerTelegramID int64, err error) {
 	ownerTwitchID, ownerTelegramID, err = b.svc.GetOwnerIDsByInviteKey(ctx, inviteKey)
 	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			b.bot.Send(tg.NewMessage(u.Message.From.ID, MsgInviteKeyNotFound))
+			return 0, 0, fmt.Errorf("%s", MsgInviteKeyNotFound)
+		}
 		return 0, 0, err
 	}
 
@@ -149,6 +162,28 @@ func (b *Bot) isAlreadyMember(ctx context.Context, u tg.Update, subchatTelegramI
 	if chatMember.Status == chatStatusMember {
 		b.bot.Send(tg.NewMessage(u.Message.From.ID, MsgAlreadyMember))
 		return fmt.Errorf("%s", MsgAlreadyMember)
+	}
+
+	return nil
+}
+
+func (b *Bot) checkLinkedAccounts(ctx context.Context, u tg.Update, ownerTwitchID int64) error {
+	userTelegramID, userTelegramUsername, err := b.svc.GetTelegramByTwitchID(ctx, ownerTwitchID)
+	if err != nil {
+		return err
+	}
+	if userTelegramID != 0 && userTelegramID != u.Message.From.ID {
+		b.bot.Send(tg.NewMessage(u.Message.From.ID, fmt.Sprintf(MsgTwitchAlreadyLinked, userTelegramUsername)))
+		return err
+	}
+
+	userTwitchID, userTwitchUsername, err := b.svc.GetTwitchByTelegramUsernameOrID(ctx, u.Message.From.ID, u.Message.From.UserName)
+	if err != nil {
+		return err
+	}
+	if userTwitchID != 0 && userTwitchID != ownerTwitchID {
+		b.bot.Send(tg.NewMessage(u.Message.From.ID, fmt.Sprintf(MsgTelegramAlreadyLinked, userTwitchUsername)))
+		return err
 	}
 
 	return nil

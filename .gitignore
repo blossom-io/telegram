@@ -5,3 +5,4 @@ internal/config/config.dev.yaml
 go.work
 go.work.sum
 main
+.env
