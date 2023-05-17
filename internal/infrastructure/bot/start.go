@@ -23,6 +23,8 @@ const (
 )
 
 func (b *Bot) CmdStart(ctx context.Context, u tg.Update) error {
+	b.bot.Send(tg.NewChatAction(u.Message.Chat.ID, tg.ChatTyping))
+
 	inviteKey := u.Message.CommandArguments()
 	if inviteKey == "" {
 		return nil
