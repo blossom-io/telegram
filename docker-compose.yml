@@ -1,0 +1,40 @@
+version: "3.9"
+services:
+    telegram:
+        build: .
+        container_name: telegram
+        image: telegram
+          #entrypoint: /usr/bin/tail
+          #command: "-f /dev/null"
+          #tty: true
+        environment:
+          - BLSM_TG_BOT_API_ID=${BLSM_TG_BOT_API_ID}
+          - BLSM_TG_BOT_API_HASH=${BLSM_TG_BOT_API_HASH}
+          - BLSM_TG_BOT_TOKEN=${BLSM_TG_BOT_TOKEN}
+          - BLSM_TG_BOT_USERNAME=${BLSM_TG_BOT_USERNAME}
+          - BLSM_TG_WEBHOOK_URL=${BLSM_TG_WEBHOOK_URL}
+          - BLSM_TG_LOG_LEVEL=${BLSM_TG_LOG_LEVEL}
+          - PG_URL=${PG_URL}
+        ports:
+            - 8443:8443
+        networks:
+            - internal
+            - external
+        labels:
+          traefik.enable: "true"
+          traefik.http.routers.telegram.rule: "Host(`webhook.blsm.me`)"
+          #traefik.basic.port: 3001
+          #traefik.http.routers.core.loadbalancer.server.port: "3001"
+          traefik.http.routers.telegram.entrypoints: "websecure"
+          # Uses the Host rule to define which certificate to issue
+          traefik.http.routers.telegram.tls.certresolver: "cfresolver"
+
+
+
+networks:
+  internal:
+    name: "internal"
+    internal: true
+  external:
+    name: "external"
+    external: true
