@@ -1,0 +1,11 @@
+.vscode
+__debug_bin
+.git
+LICENSE.md
+CHANGELOG.md
+README.md
+docker-compose.yml
+go.work
+go.work.sum
+main
+.env
