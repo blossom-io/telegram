@@ -82,6 +82,12 @@ func (b *Bot) Run(ctx context.Context) error {
 				b.log.Error(err.Error())
 				continue
 			}
+		case CmdPing:
+			err = b.CmdPing(ctx, u)
+			if err != nil {
+				b.log.Error(err.Error())
+				continue
+			}
 		}
 	}
 
