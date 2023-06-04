@@ -13,8 +13,8 @@ type (
 	}
 
 	Bot struct {
-		ApiID       int    `env-required:"true" yaml:"api_id"  env:"BLSM_TG_BOT_API_ID"`
-		ApiHash     string `env-required:"true" yaml:"api_hash" env:"BLSM_TG_BOT_API_HASH"`
+		//ApiID       int    `env-required:"true" yaml:"api_id"  env:"BLSM_TG_BOT_API_ID"`
+		//ApiHash     string `env-required:"true" yaml:"api_hash" env:"BLSM_TG_BOT_API_HASH"`
 		BotToken    string `env-required:"true" yaml:"bot_token" env:"BLSM_TG_BOT_TOKEN"`
 		BotUsername string `env-required:"true" yaml:"bot_username" env:"BLSM_TG_BOT_USERNAME"`
 		WebHookURL  string `env-required:"true" yaml:"webhook_url" env:"BLSM_TG_WEBHOOK_URL"`
