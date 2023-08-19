@@ -18,13 +18,14 @@ func Run(cfg *config.Config) {
 	ctx, cancel := signal.NotifyContext(context.Background(), os.Interrupt)
 	defer cancel()
 
-	log := logger.New(cfg.Bot.LogLevel)
+	log := logger.New()
 	log.Info("starting bot...")
 
 	// Database
 	DB, err := postgres.New(cfg.Connections.Postgres.URL)
 	if err != nil {
-		log.Fatal("app - Run - postgres.New - error initializing database: %w", err)
+		log.Error(err.Error())
+		os.Exit(1)
 	}
 	defer DB.Close()
 
@@ -35,7 +36,7 @@ func Run(cfg *config.Config) {
 
 	botSvc, err := bot.New(ctx, cfg, log, svc)
 	if err != nil {
-		log.Error("app - Run - bot.New: %w", err)
+		log.Error(err.Error())
 		os.Exit(1)
 	}
 

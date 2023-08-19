@@ -23,6 +23,7 @@ type Repository interface {
 	Subchater
 	Tokener
 	Inviter
+	Downloader
 }
 
 var _ Repository = (*repository)(nil)
@@ -60,16 +61,6 @@ func (r *repository) InTX(ctx context.Context, txFunc []func(ctx context.Context
 	if err != nil {
 		return fmt.Errorf("begin transaction: %w", err)
 	}
-
-	// run callback
-	// err = txFunc(injectTx(ctx, tx))
-	// if err != nil {
-	// 	// if error, rollback
-	// 	if errRollback := tx.Rollback(); errRollback != nil {
-	// 		log.Printf("rollback transaction: %v", errRollback)
-	// 	}
-	// 	return err
-	// }
 
 	for _, f := range txFunc {
 		err = f(injectTx(ctx, tx))

@@ -2,8 +2,9 @@ package bot
 
 import (
 	"context"
-	"log"
+	"fmt"
 	"net/http"
+	"net/url"
 
 	"blossom/internal/config"
 	"blossom/internal/service"
@@ -32,7 +33,7 @@ func New(ctx context.Context, cfg *config.Config, log logger.Logger, svc service
 
 	bot.Debug = true
 
-	log.Info("Authorized on account %s", bot.Self.UserName)
+	log.Info("Authorized", "username", bot.Self.UserName)
 
 	return &Bot{
 		cfg: cfg,
@@ -43,14 +44,14 @@ func New(ctx context.Context, cfg *config.Config, log logger.Logger, svc service
 }
 
 func (b *Bot) Run(ctx context.Context) error {
-	wh, err := tg.NewWebhook(b.cfg.WebHookURL + b.bot.Token)
+	whCfg, err := b.makeWebhookConfig()
 	if err != nil {
 		return err
 	}
 
-	_, err = b.bot.Request(wh)
+	_, err = b.bot.Request(whCfg)
 	if err != nil {
-		log.Fatal(err)
+		b.log.Error(err.Error())
 	}
 
 	updates := b.bot.ListenForWebhook("/" + b.bot.Token)
@@ -58,7 +59,8 @@ func (b *Bot) Run(ctx context.Context) error {
 
 	for u := range updates {
 		if u.Message != nil {
-			b.log.Info("[%s:%s] %s", u.Message.Chat.Title, u.Message.From.UserName, u.Message.Text)
+			b.log.Info("msg", "title", u.Message.Chat.Title, "username", u.Message.From.UserName, "text", u.Message.Text)
+			b.Downloader(ctx, u)
 		}
 
 		if u.Message == nil {
@@ -88,6 +90,12 @@ func (b *Bot) Run(ctx context.Context) error {
 				b.log.Error(err.Error())
 				continue
 			}
+		case CmdTest:
+			err = b.CmdTest(ctx, u)
+			if err != nil {
+				b.log.Error(err.Error())
+				continue
+			}
 		}
 	}
 
@@ -96,4 +104,17 @@ func (b *Bot) Run(ctx context.Context) error {
 
 func (b *Bot) Close() error {
 	return nil
+}
+
+func (b *Bot) makeWebhookConfig() (tg.WebhookConfig, error) {
+	URL, err := url.Parse(b.cfg.WebHookURL)
+	if err != nil {
+		return tg.WebhookConfig{}, err
+	}
+
+	whURL := fmt.Sprintf("%s/%s", URL.String(), b.bot.Token)
+
+	b.log.Info("webhook url", "url", whURL)
+
+	return tg.NewWebhook(whURL)
 }
