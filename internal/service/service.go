@@ -10,6 +10,7 @@ type Servicer interface {
 	Personer
 	Tokener
 	Inviter
+	Downloader
 }
 
 type service struct {

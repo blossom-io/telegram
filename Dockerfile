@@ -1,4 +1,4 @@
-ARG GO=golang:1.20-alpine
+ARG GO=golang:1.21-alpine
 
 # Step 1: Dependencies caching
 FROM ${GO} as deps
@@ -17,4 +17,7 @@ RUN CGO_ENABLED=0 go build -o binfile ./cmd/blossom
 FROM alpine
 COPY --from=build /app/binfile /binfile
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
+
+RUN apk add --no-cache --update yt-dlp
+
 CMD ["/binfile"]

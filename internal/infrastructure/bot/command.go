@@ -4,4 +4,5 @@ const (
 	CmdStart = "start"
 	CmdHelp  = "help"
 	CmdPing  = "ping"
+	CmdTest  = "test"
 )
