@@ -5,12 +5,18 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
+	"time"
 
 	"blossom/internal/config"
 	"blossom/internal/service"
 	"blossom/pkg/logger"
 
 	tg "github.com/go-telegram-bot-api/telegram-bot-api/v5"
+)
+
+const (
+	maxCalls          = 2
+	rateLimitInterval = 1 * time.Second
 )
 
 type Boter interface {
@@ -23,6 +29,7 @@ type Bot struct {
 	cfg *config.Config
 	svc service.Servicer
 	bot *tg.BotAPI
+	rl  *Limit
 }
 
 func New(ctx context.Context, cfg *config.Config, log logger.Logger, svc service.Servicer) (Boter, error) {
@@ -40,6 +47,7 @@ func New(ctx context.Context, cfg *config.Config, log logger.Logger, svc service
 		log: log,
 		svc: svc,
 		bot: bot,
+		rl:  NewRateLimit(ctx, maxCalls, rateLimitInterval),
 	}, nil
 }
 
@@ -60,7 +68,7 @@ func (b *Bot) Run(ctx context.Context) error {
 	for u := range updates {
 		if u.Message != nil {
 			b.log.Info("msg", "title", u.Message.Chat.Title, "username", u.Message.From.UserName, "text", u.Message.Text)
-			b.Downloader(ctx, u)
+			go b.Downloader(ctx, u)
 		}
 
 		if u.Message == nil {
@@ -92,6 +100,12 @@ func (b *Bot) Run(ctx context.Context) error {
 			}
 		case CmdTest:
 			err = b.CmdTest(ctx, u)
+			if err != nil {
+				b.log.Error(err.Error())
+				continue
+			}
+		case CmdAddWarn:
+			err = b.CmdAddWarn(ctx, u)
 			if err != nil {
 				b.log.Error(err.Error())
 				continue

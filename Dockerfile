@@ -18,6 +18,6 @@ FROM alpine
 COPY --from=build /app/binfile /binfile
 COPY --from=build /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-RUN apk add --no-cache --update yt-dlp
+RUN apk add --no-cache --update yt-dlp ffmpeg
 
 CMD ["/binfile"]

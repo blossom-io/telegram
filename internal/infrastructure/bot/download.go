@@ -4,6 +4,7 @@ import (
 	"blossom/internal/entity"
 	"bytes"
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -16,7 +17,7 @@ const (
 )
 
 var (
-	ProgressMsg    = []string{"⌛️.", "⏳..", "⌛️...", "⏳..."}
+	HourglassMsg   = []string{"⏳...", "⌛️.", "⏳.."}
 	SupportedSites = []string{
 		"tiktok.com",
 		"/shorts/",
@@ -27,7 +28,7 @@ var (
 
 // Downloader checks if the message contains an url and if it is enabled in chat downloads it
 func (b *Bot) Downloader(ctx context.Context, u tg.Update) (err error) {
-	ctx, stop := context.WithTimeout(ctx, 20*time.Second)
+	ctx, stop := context.WithTimeout(ctx, 30*time.Second)
 	defer stop()
 
 	urls := collectURLs(u)
@@ -51,81 +52,86 @@ func (b *Bot) Downloader(ctx context.Context, u tg.Update) (err error) {
 
 	msg, err := b.SendProgressMsg(ctx, u)
 	if err != nil {
+
 		return err
 	}
-	defer b.bot.Request(tg.NewDeleteMessage(u.Message.Chat.ID, msg.MessageID))
+	defer b.DeleteMessage(ctx, tg.NewDeleteMessage(u.Message.Chat.ID, msg.MessageID))
 
-	media, body, thumb, err := b.svc.Download(ctx, urls[0])
+	media, err := b.svc.Fetch(ctx, urls[0])
 	if err != nil {
 
 		return err
 	}
 
-	video := tg.NewVideo(u.Message.Chat.ID, tg.FileReader{
-		Name:   "1.mp4",
-		Reader: bytes.NewReader(body),
-	})
-	video.ReplyMarkup = inlineButton(media)
-	video.Thumb = tg.FileReader{
-		Name:   "1.jpg",
-		Reader: bytes.NewReader(thumb),
-	}
-	video.SupportsStreaming = true
-	video.Duration = int(media.Duration)
-	if !textContainsOnlyURL {
-		video.ReplyToMessageID = u.Message.MessageID
-	}
+	m := b.prepareMsg(ctx, u, media)
 
-	b.bot.Send(tg.NewChatAction(u.Message.Chat.ID, tg.ChatUploadVideo))
-
-	_, err = b.bot.Send(video)
-	if err != nil {
-
-		return err
-	}
+	b.SendMediaGroup(ctx, m)
 
 	if textContainsOnlyURL {
-		b.bot.Request(tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID))
+		b.DeleteMessage(ctx, tg.NewDeleteMessage(u.Message.Chat.ID, u.Message.MessageID))
 	}
 
 	return nil
 }
 
-func (b *Bot) SendProgressMsg(ctx context.Context, u tg.Update) (msg tg.Message, err error) {
-	ctx, _ = context.WithTimeout(ctx, 5*time.Second)
-	// defer stop()
+// prepareMsg prepares a tg.MediaGroupConfig for sending
+func (b *Bot) prepareMsg(ctx context.Context, u tg.Update, media *entity.Media) tg.MediaGroupConfig {
+	vid := tg.NewInputMediaVideo(tg.FileReader{
+		Name:   "1.mp4",
+		Reader: bytes.NewReader(media.Body),
+	})
+	vid.Thumb = tg.FileReader{
+		Name:   "1.jpg",
+		Reader: bytes.NewReader(media.Preview),
+	}
+	vid.Width = media.Width
+	vid.Height = media.Height
+	vid.Duration = int(media.Duration)
+	vid.SupportsStreaming = true
+	vid.ParseMode = tg.ModeMarkdownV2
+	vid.Caption = fmt.Sprintf("[%s](%s)", media.Extractor, media.WebpageURL)
 
-	reply := tg.NewMessage(u.Message.Chat.ID, "⏳...")
+	m := tg.NewMediaGroup(u.Message.Chat.ID, []any{vid})
+	if u.Message.ReplyToMessage != nil {
+		m.ReplyToMessageID = u.Message.ReplyToMessage.MessageID
+	}
+
+	return m
+}
+
+func (b *Bot) SendProgressMsg(ctx context.Context, u tg.Update) (msg tg.Message, err error) {
+	reply := tg.NewMessage(u.Message.Chat.ID, "⌛️...")
 	reply.ReplyToMessageID = u.Message.MessageID
 
-	msg, err = b.bot.Send(reply)
+	msg, err = b.SendMessage(ctx, reply)
 	if err != nil {
 		return msg, err
 	}
 
-	b.bot.Send(tg.NewChatAction(u.Message.Chat.ID, tg.ChatTyping))
+	b.SendAction(ctx, tg.NewChatAction(u.Message.Chat.ID, tg.ChatTyping))
 
-	go func() {
-		i := 0
-		t := time.Tick(ProgressUpdateInterval)
-	loop:
-		for {
-			select {
-			case <-t:
-				if i > len(ProgressMsg)-1 {
-					i = 0
-				}
+	// go func() {
+	// 	i := 0
+	// 	t := time.Tick(ProgressUpdateInterval)
+	// loop:
+	// 	for {
+	// 		select {
+	// 		case <-t:
+	// 			if i > len(HourglassMsg)-1 {
+	// 				i = 0
+	// 			}
 
-				b.bot.Send(tg.NewEditMessageText(u.Message.Chat.ID, msg.MessageID, ProgressMsg[i]))
+	// 			// b.bot.Send(tg.NewEditMessageText(u.Message.Chat.ID, msg.MessageID, HourglassMsg[i]))
+	// 			b.EditMessageTextTry(ctx, tg.NewEditMessageText(u.Message.Chat.ID, msg.MessageID, HourglassMsg[i]))
 
-				i++
-			case <-ctx.Done():
-				break loop
+	// 			i++
+	// 		case <-ctx.Done():
+	// 			break loop
 
-			}
-		}
+	// 		}
+	// 	}
 
-	}()
+	// }()
 
 	return msg, nil
 }
