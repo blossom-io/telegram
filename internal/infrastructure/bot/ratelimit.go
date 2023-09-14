@@ -2,7 +2,6 @@ package bot
 
 import (
 	"context"
-	"fmt"
 	"sync"
 	"time"
 )
@@ -58,7 +57,6 @@ func (l *Limit) Limit(ctx context.Context, chatID int64) {
 		oldestTime := l.lastCalls[chatID][0]
 		if now.Sub(oldestTime) < l.interval {
 			sleepDuration := l.interval - now.Sub(oldestTime)
-			fmt.Println("sleeping for", sleepDuration)
 			time.Sleep(sleepDuration)
 		}
 		l.lastCalls[chatID] = l.lastCalls[chatID][1:]
@@ -134,5 +132,20 @@ func (l *Limit) Available(ctx context.Context, chatID int64) bool {
 
 // 	l.wait(chatID)
 
-// 	return true
-// }
+//		return true
+//	}
+//
+
+// Ensure this function is only called once every d duration
+func Debounce(d time.Duration, f func()) func() {
+	var lastCall time.Time
+
+	return func() {
+		if time.Since(lastCall) < d {
+			return
+		}
+
+		lastCall = time.Now()
+		f()
+	}
+}

@@ -7,6 +7,7 @@ import (
 
 	"blossom/internal/config"
 	"blossom/internal/infrastructure/bot"
+	"blossom/internal/infrastructure/gpt"
 	"blossom/internal/infrastructure/repository"
 	"blossom/internal/service"
 	"blossom/pkg/logger"
@@ -32,7 +33,10 @@ func Run(cfg *config.Config) {
 	// Repositories
 	repo := repository.New(DB)
 
-	svc := service.New(log, cfg, repo)
+	// AI
+	gpt := gpt.New(cfg, log)
+
+	svc := service.New(log, cfg, repo, gpt)
 
 	botSvc, err := bot.New(ctx, cfg, log, svc)
 	if err != nil {

@@ -12,6 +12,7 @@ const (
 	CmdPing    = "ping"
 	CmdTest    = "test"
 	CmdAddWarn = "warn"
+	CmdGPT     = "gpt"
 )
 
 func (b *Bot) SendMediaGroup(ctx context.Context, p tg.MediaGroupConfig) ([]tg.Message, error) {

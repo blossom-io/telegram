@@ -110,6 +110,12 @@ func (b *Bot) Run(ctx context.Context) error {
 				b.log.Error(err.Error())
 				continue
 			}
+		case CmdGPT:
+			err = b.CmdGPT(u)
+			if err != nil {
+				b.log.Error(err.Error())
+				continue
+			}
 		}
 	}
 

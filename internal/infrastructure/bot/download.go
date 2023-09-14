@@ -89,9 +89,10 @@ func (b *Bot) prepareMsg(ctx context.Context, u tg.Update, media *entity.Media) 
 	vid.Duration = int(media.Duration)
 	vid.SupportsStreaming = true
 	vid.ParseMode = tg.ModeMarkdownV2
-	vid.Caption = fmt.Sprintf("[%s](%s)", media.Extractor, media.WebpageURL)
+	vid.Caption = fmt.Sprintf("[%s](%s) от %s", media.Extractor, media.WebpageURL, mention(u.Message.From.FirstName, u.Message.From.ID))
 
 	m := tg.NewMediaGroup(u.Message.Chat.ID, []any{vid})
+	m.DisableNotification = true
 	if u.Message.ReplyToMessage != nil {
 		m.ReplyToMessageID = u.Message.ReplyToMessage.MessageID
 	}
@@ -110,42 +111,7 @@ func (b *Bot) SendProgressMsg(ctx context.Context, u tg.Update) (msg tg.Message,
 
 	b.SendAction(ctx, tg.NewChatAction(u.Message.Chat.ID, tg.ChatTyping))
 
-	// go func() {
-	// 	i := 0
-	// 	t := time.Tick(ProgressUpdateInterval)
-	// loop:
-	// 	for {
-	// 		select {
-	// 		case <-t:
-	// 			if i > len(HourglassMsg)-1 {
-	// 				i = 0
-	// 			}
-
-	// 			// b.bot.Send(tg.NewEditMessageText(u.Message.Chat.ID, msg.MessageID, HourglassMsg[i]))
-	// 			b.EditMessageTextTry(ctx, tg.NewEditMessageText(u.Message.Chat.ID, msg.MessageID, HourglassMsg[i]))
-
-	// 			i++
-	// 		case <-ctx.Done():
-	// 			break loop
-
-	// 		}
-	// 	}
-
-	// }()
-
 	return msg, nil
-}
-
-func inlineButton(media entity.Media) tg.InlineKeyboardMarkup {
-	if media.Title == "" {
-		media.Title = media.WebpageURL
-	}
-
-	return tg.NewInlineKeyboardMarkup(
-		tg.NewInlineKeyboardRow(
-			tg.NewInlineKeyboardButtonURL(media.Title, media.WebpageURL),
-		),
-	)
 }
 
 // collectURLs collects urls from the message
@@ -171,4 +137,9 @@ func isSupported(s string, substrings []string) bool {
 		}
 	}
 	return false
+}
+
+// mention returns a mention of a user
+func mention(name string, id int64) string {
+	return fmt.Sprintf("[%s](tg://user?id=%d)", name, id)
 }
