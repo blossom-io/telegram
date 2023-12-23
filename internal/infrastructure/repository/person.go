@@ -35,6 +35,7 @@ func (r *repository) LinkTelegramToTwitchID(ctx context.Context, twitchID int64,
 	}
 
 	_, err = stmt.ExecContext(ctx, a...)
+
 	if err != nil {
 		return fmt.Errorf("LinkTelegramToTwitchID - Exec: %w", err)
 	}
