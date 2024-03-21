@@ -1,4 +1,4 @@
-ARG GO=golang:1.21-alpine
+ARG GO=golang:1.22-alpine
 
 # Step 1: Dependencies caching
 FROM ${GO} as deps
