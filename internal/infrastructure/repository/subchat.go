@@ -12,11 +12,11 @@ type Subchater interface {
 var _ Subchater = (*repository)(nil)
 
 // IsSubchatExistsAndActive checks if subchat exists and active.
-func (r *repository) IsSubchatExistsAndActive(ctx context.Context, ownerTwitchID int64) (subchatTelegramID int64, err error) {
-	q, a, err := r.DB.Sq.Select("subchat_telegram_id").From("subchat").
+func (r *repository) IsSubchatExistsAndActive(ctx context.Context, ownerTwitchID int64) (chatTelegramID int64, err error) {
+	q, a, err := r.DB.Sq.Select("chat_telegram_id").From("chat").
 		Where("twitch_id = $1", ownerTwitchID).
 		Suffix("AND NOT disabled").
-		Suffix("AND subchat_telegram_id IS NOT NULL").ToSql()
+		Suffix("AND chat_telegram_id IS NOT NULL").ToSql()
 	if err != nil {
 		return 0, fmt.Errorf("IsSubchatExistsAndActive - r.Sq: %w", err)
 	}
@@ -26,10 +26,10 @@ func (r *repository) IsSubchatExistsAndActive(ctx context.Context, ownerTwitchID
 		return 0, fmt.Errorf("IsSubchatExistsAndActive - r.prepare: %w", err)
 	}
 
-	err = stmt.QueryRowContext(ctx, a...).Scan(&subchatTelegramID)
+	err = stmt.QueryRowContext(ctx, a...).Scan(&chatTelegramID)
 	if err != nil {
 		return 0, fmt.Errorf("IsSubchatExistsAndActive - Exec: %w", err)
 	}
 
-	return subchatTelegramID, nil
+	return chatTelegramID, nil
 }
