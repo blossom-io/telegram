@@ -8,15 +8,15 @@ import (
 )
 
 type Inviter interface {
-	GetSubchatInviteLinkByTwitchID(ctx context.Context, subchatTelegramID int64, ownerTwitchID int64) (string, error)
-	SetSubchatInviteLinkByTwitchID(ctx context.Context, subchatTelegramID int64, ownerTwitchID int64, inviteLink string) error
+	GetSubchatInviteLinkByTwitchID(ctx context.Context, chatTelegramID int64, ownerTwitchID int64) (string, error)
+	SetSubchatInviteLinkByTwitchID(ctx context.Context, chatTelegramID int64, ownerTwitchID int64, inviteLink string) error
 }
 
 var _ Inviter = (*repository)(nil)
 
-func (r *repository) GetSubchatInviteLinkByTwitchID(ctx context.Context, subchatTelegramID int64, ownerTwitchID int64) (inviteLink string, err error) {
+func (r *repository) GetSubchatInviteLinkByTwitchID(ctx context.Context, chatTelegramID int64, ownerTwitchID int64) (inviteLink string, err error) {
 	q, a, err := r.DB.Sq.Select("subchat_telegram_invite_link").From("invite").
-		Where("subchat_telegram_id = $1", subchatTelegramID).
+		Where("chat_telegram_id = $1", chatTelegramID).
 		Where("twitch_id = $2", ownerTwitchID).ToSql()
 	if err != nil {
 		return "", fmt.Errorf("GetSubchatInviteLinkByTwitchID - r.Sq: %w", err)
@@ -35,11 +35,11 @@ func (r *repository) GetSubchatInviteLinkByTwitchID(ctx context.Context, subchat
 	return inviteLink, nil
 }
 
-func (r *repository) SetSubchatInviteLinkByTwitchID(ctx context.Context, subchatTelegramID int64, twitchID int64, inviteLink string) error {
+func (r *repository) SetSubchatInviteLinkByTwitchID(ctx context.Context, chatTelegramID int64, twitchID int64, inviteLink string) error {
 	q, a, err := r.DB.Sq.Insert("invite").
-		Columns("twitch_id", "subchat_telegram_id", "subchat_telegram_invite_link").
-		Values(twitchID, subchatTelegramID, inviteLink).
-		Suffix("ON CONFLICT (twitch_id, subchat_telegram_id) DO UPDATE SET subchat_telegram_invite_link = EXCLUDED.subchat_telegram_invite_link").
+		Columns("twitch_id", "chat_telegram_id", "subchat_telegram_invite_link").
+		Values(twitchID, chatTelegramID, inviteLink).
+		Suffix("ON CONFLICT (twitch_id, chat_telegram_id) DO UPDATE SET subchat_telegram_invite_link = EXCLUDED.subchat_telegram_invite_link").
 		ToSql()
 	if err != nil {
 		return fmt.Errorf("SetSubchatInviteLinkByTwitchID - r.Sq: %w", err)

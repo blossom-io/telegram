@@ -6,7 +6,7 @@ require (
 	github.com/Masterminds/squirrel v1.5.4
 	github.com/go-telegram-bot-api/telegram-bot-api/v5 v5.5.1
 	github.com/ilyakaznacheev/cleanenv v1.5.0
-	github.com/jackc/pgx/v5 v5.5.5
+	github.com/jackc/pgx/v5 v5.6.0
 	github.com/sashabaranov/go-openai v1.17.9
 	github.com/stretchr/testify v1.9.0
 )

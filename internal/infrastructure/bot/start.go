@@ -35,7 +35,7 @@ func (b *Bot) CmdStart(ctx context.Context, u tg.Update) error {
 		return err
 	}
 
-	subchatTelegramID, err := b.svc.GetSubchatIDByInviteKey(ctx, inviteKey)
+	chatTelegramID, err := b.svc.GetSubchatIDByInviteKey(ctx, inviteKey)
 	if err != nil {
 		return err
 	}
@@ -50,29 +50,29 @@ func (b *Bot) CmdStart(ctx context.Context, u tg.Update) error {
 		return err
 	}
 
-	err = b.isAlreadyMember(ctx, u, subchatTelegramID)
+	err = b.isAlreadyMember(ctx, u, chatTelegramID)
 	if err != nil {
 		return err
 	}
 
-	inviteLink, err := b.svc.GetSubchatInviteLinkByTwitchID(ctx, subchatTelegramID, ownerTwitchID)
+	inviteLink, err := b.svc.GetSubchatInviteLinkByTwitchID(ctx, chatTelegramID, ownerTwitchID)
 	if err != nil {
 		return err
 	}
 
 	if inviteLink != "" {
-		err = b.RevokeChatInviteLink(subchatTelegramID, inviteLink)
+		err = b.RevokeChatInviteLink(chatTelegramID, inviteLink)
 		if err != nil {
 			return err
 		}
 	}
 
-	inviteLink, err = b.CreateChatInviteLink(subchatTelegramID, inviteLinkExpiresIn)
+	inviteLink, err = b.CreateChatInviteLink(chatTelegramID, inviteLinkExpiresIn)
 	if err != nil {
 		return err
 	}
 
-	err = b.svc.SetSubchatInviteLinkByTwitchID(ctx, subchatTelegramID, ownerTwitchID, inviteLink)
+	err = b.svc.SetSubchatInviteLinkByTwitchID(ctx, chatTelegramID, ownerTwitchID, inviteLink)
 	if err != nil {
 		return err
 	}
@@ -108,10 +108,10 @@ func (b *Bot) CreateChatInviteLink(chatID int64, expiresIn time.Duration) (invit
 	return resp.InviteLink, nil
 }
 
-func (b *Bot) RevokeChatInviteLink(subchatTelegramID int64, inviteLink string) error {
+func (b *Bot) RevokeChatInviteLink(chatTelegramID int64, inviteLink string) error {
 	config := tg.RevokeChatInviteLinkConfig{
 		InviteLink: inviteLink,
-		ChatConfig: tg.ChatConfig{ChatID: subchatTelegramID},
+		ChatConfig: tg.ChatConfig{ChatID: chatTelegramID},
 	}
 
 	res, err := b.bot.Request(config)
@@ -155,8 +155,8 @@ func (b *Bot) getOwnerIDsByInviteKey(ctx context.Context, u tg.Update, inviteKey
 	return ownerTwitchID, ownerTelegramID, nil
 }
 
-func (b *Bot) isAlreadyMember(ctx context.Context, u tg.Update, subchatTelegramID int64) error {
-	chatMember, err := b.bot.GetChatMember(tg.GetChatMemberConfig{ChatConfigWithUser: tg.ChatConfigWithUser{ChatID: subchatTelegramID, UserID: u.Message.From.ID}})
+func (b *Bot) isAlreadyMember(ctx context.Context, u tg.Update, chatTelegramID int64) error {
+	chatMember, err := b.bot.GetChatMember(tg.GetChatMemberConfig{ChatConfigWithUser: tg.ChatConfigWithUser{ChatID: chatTelegramID, UserID: u.Message.From.ID}})
 	if err != nil {
 		return err
 	}

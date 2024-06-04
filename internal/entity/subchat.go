@@ -1,8 +1,8 @@
 package entity
 
-type Subchat struct {
+type Chat struct {
 	Dates
-	OwnerTwitchID     int64 `json:"ownerTwitchId"`
-	SubchatTelegramID int64 `json:"subchatTelegramId"`
-	Disabled          bool  `json:"disabled"`
+	OwnerTwitchID  int64 `json:"ownerTwitchId"`
+	ChatTelegramID int64 `json:"chatTelegramId"`
+	Disabled       bool  `json:"disabled"`
 }
