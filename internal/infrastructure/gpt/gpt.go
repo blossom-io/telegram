@@ -29,7 +29,7 @@ func New(cfg *config.Config, log logger.Logger) GPTer {
 
 func (g *GPT) Ask(ctx context.Context, prompt string) (string, error) {
 	req := openai.ChatCompletionRequest{
-		Model:     openai.GPT3Dot5Turbo,
+		Model:     openai.GPT4o,
 		MaxTokens: g.cfg.AI.MaxTokens,
 		Messages: []openai.ChatCompletionMessage{
 			{
@@ -50,7 +50,7 @@ func (g *GPT) Ask(ctx context.Context, prompt string) (string, error) {
 
 func (g *GPT) AskStream(ctx context.Context, prompt string) (stream *openai.ChatCompletionStream, err error) {
 	req := openai.ChatCompletionRequest{
-		Model:     openai.GPT3Dot5Turbo,
+		Model:     openai.GPT4o,
 		MaxTokens: g.cfg.AI.MaxTokens,
 		Messages: []openai.ChatCompletionMessage{
 			{
